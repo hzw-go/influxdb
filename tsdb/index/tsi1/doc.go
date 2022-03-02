@@ -61,6 +61,11 @@ name, the tag set, and a checksum.
 When the log file is replayed, if the checksum is incorrect or the entry is
 incomplete (because of a partially failed write) then the log is truncated.
 
+// What: WAL
+// Why: rebuild memory state after restart
+// When: add series,delete series(delete measurement,tag key,tag value)
+// Where: disk file
+// How: append
 
 Index File Layout
 
