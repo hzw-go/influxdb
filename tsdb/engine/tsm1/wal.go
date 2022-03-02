@@ -650,6 +650,7 @@ func (w *WriteWALEntry) Encode(dst []byte) ([]byte, error) {
 	//
 	// This structure is then repeated for each key an value slices.
 	//
+	// WriteWALEntry contains seriesKey, which is optimizable
 	// ┌────────────────────────────────────────────────────────────────────┐
 	// │                           WriteWALEntry                            │
 	// ├──────┬─────────┬────────┬───────┬─────────┬─────────┬───┬──────┬───┤

@@ -1346,11 +1346,13 @@ func (e *Engine) WritePoints(points []models.Point) error {
 	defer e.mu.RUnlock()
 
 	// first try to write to the cache
+	// write to the cache
 	if err := e.Cache.WriteMulti(values); err != nil {
 		return err
 	}
 
 	if e.WALEnabled {
+		// write to the wal
 		if _, err := e.WAL.WriteMulti(values); err != nil {
 			return err
 		}
@@ -1910,6 +1912,7 @@ func (e *Engine) writeSnapshotAndCommit(log *zap.Logger, closedFiles []string, s
 }
 
 // compactCache continually checks if the WAL cache should be written to disk.
+// compact WAL
 func (e *Engine) compactCache() {
 	t := time.NewTicker(time.Second)
 	defer t.Stop()

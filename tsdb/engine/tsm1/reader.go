@@ -686,6 +686,7 @@ func (a BatchDeleters) Rollback() error {
 
 // indirectIndex is a TSMIndex that uses a raw byte slice representation of an index.  This
 // implementation can be used for indexes that may be MMAPed into memory.
+// tsm index reader
 type indirectIndex struct {
 	mu sync.RWMutex
 
@@ -807,6 +808,7 @@ func (d *indirectIndex) search(key []byte) int {
 
 	// We use a binary search across our indirect offsets (pointers to all the keys
 	// in the index slice).
+	// why not use hash just like tsi?
 	// TODO(sgc): this should be inlined to `indirectIndex` as it is only used here
 	i := bytesutil.SearchBytesFixed(d.offsets, 4, func(x []byte) bool {
 		// i is the position in offsets we are at so get offset it points to
@@ -868,6 +870,7 @@ func (d *indirectIndex) readEntriesAt(ofs int, entries *[]IndexEntry) ([]byte, [
 }
 
 // ReadEntries returns all index entries for a key.
+// find tsm index by series key(using binary search)
 func (d *indirectIndex) ReadEntries(key []byte, entries *[]IndexEntry) []IndexEntry {
 	d.mu.RLock()
 	defer d.mu.RUnlock()

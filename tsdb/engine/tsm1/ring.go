@@ -96,6 +96,7 @@ func (r *ring) entry(key []byte) *entry {
 // write writes values to the entry in the ring's partition associated with key.
 // If no entry exists for the key then one will be created.
 // write is safe for use by multiple goroutines.
+// write point to the cache
 func (r *ring) write(key []byte, values Values) (bool, error) {
 	return r.getPartition(key).write(key, values)
 }
