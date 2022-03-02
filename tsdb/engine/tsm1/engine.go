@@ -1254,6 +1254,7 @@ func (e *Engine) addToIndexFromKey(keys [][]byte, fieldTypes []influxql.DataType
 
 // WritePoints writes metadata and point data into the engine.
 // It returns an error if new points are added to an existing key.
+// Entry of write
 func (e *Engine) WritePoints(points []models.Point) error {
 	values := make(map[string][]Value, len(points))
 	var (
