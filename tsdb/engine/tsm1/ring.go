@@ -49,6 +49,9 @@ type ring struct {
 //
 //     {1, 2, 4, 8, 16, 32, 64, 128, 256}.
 //
+// points is stored in map whose key is seriesKey, value is a list of (ts,value)
+// since the map is fit the situation, why using multiple maps?
+// writing cache is thread-safe thanks to the read-write lock, in order to decrease the span of lock, multiple small partition is used rather than one large map
 func newring(n int) (*ring, error) {
 	if n <= 0 || n > partitions {
 		return nil, fmt.Errorf("invalid number of paritions: %d", n)

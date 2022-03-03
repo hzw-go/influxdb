@@ -1562,6 +1562,11 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 	// Sort the series keys because ApplyEntryFn iterates over the keys randomly.
 	bytesutil.Sort(deleteKeys)
 
+	// how to apply the delete to immutable memory?
+	// dont have to, wal can present the immutable memory, the immutable memory is just for query
+	// but what if delete the range of immutable? it only take effect after compacting the wal?
+	// speak of delete, tsm only add some mark to describe the deletion to memory and wal, points will be deleted while compacting
+	// by the way, there is no update in tsm, or lsm, insert to the memory and wal will have the same effect as update
 	e.Cache.DeleteRange(deleteKeys, min, max)
 
 	// delete from the WAL

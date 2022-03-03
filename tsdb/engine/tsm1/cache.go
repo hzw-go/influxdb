@@ -163,6 +163,7 @@ const (
 )
 
 // storer is the interface that descibes a cache's store.
+// where point cache is actually store
 type storer interface {
 	entry(key []byte) *entry                        // Get an entry by its key.
 	write(key []byte, values Values) (bool, error)  // Write an entry to the store.
@@ -364,6 +365,7 @@ func (c *Cache) WriteMulti(values map[string][]Value) error {
 	c.updateMemSize(int64(addedSize))
 	atomic.AddInt64(&c.stats.WriteOK, 1)
 
+	// that's why batch writing is faster
 	c.mu.Lock()
 	c.lastWriteTime = time.Now()
 	c.mu.Unlock()
@@ -404,6 +406,10 @@ func (c *Cache) Snapshot() (*Cache, error) {
 		return c.snapshot, nil
 	}
 
+	// there are two store in cache: cache.store corresponding to the lsm's memory, snapshot.store corresponding to the lsm's immutable memory
+	// how to snapshot the cache?
+	// 1,move the cache.store to snapshot.store
+	// 2,make a new store and set it to cache.store
 	c.snapshot.store, c.store = c.store, c.snapshot.store
 	snapshotSize := c.Size()
 
@@ -556,6 +562,8 @@ func (c *Cache) Values(key []byte) Values {
 	var snapshotEntries *entry
 
 	c.mu.RLock()
+	// merge the results from memory and immutable memory
+	// since the immutable memory is always older than memory, points after append is ordered
 	e := c.store.entry(key)
 	if c.snapshot != nil {
 		snapshotEntries = c.snapshot.store.entry(key)
