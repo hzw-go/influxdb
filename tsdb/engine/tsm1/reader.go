@@ -34,12 +34,18 @@ type TSMReader struct {
 	mu              sync.RWMutex
 
 	// accessor provides access and decoding of blocks for the reader.
+	// what: mmap file
+	// why: read points
 	accessor blockAccessor
 
 	// index is the index of all blocks.
+	// what: in-memory tsm index reading from tsm file
+	// why: indexing, apply the deletion
 	index TSMIndex
 
 	// tombstoner ensures tombstoned keys are not available by the index.
+	// what: marks for deletion
+	// why: persisting the deletion for compaction and rebuild
 	tombstoner *Tombstoner
 
 	// size is the size of the file on disk.
@@ -241,6 +247,7 @@ func NewTSMReader(f *os.File, options ...tsmReaderOption) (*TSMReader, error) {
 	}
 
 	t.index = index
+	// if there are tombstones in the file, it means the tombstones hasn't compacted yet and need to rebuild the memory state
 	t.tombstoner = NewTombstoner(t.Path(), index.ContainsKey)
 
 	if err := t.applyTombstones(); err != nil {
@@ -459,6 +466,7 @@ func (t *TSMReader) DeleteRange(keys [][]byte, minTime, maxTime int64) error {
 
 // Delete deletes blocks indicated by keys.
 func (t *TSMReader) Delete(keys [][]byte) error {
+	// persist to tombstone to make sure the actual deletion will eventually take place
 	if err := t.tombstoner.Add(keys); err != nil {
 		return err
 	}
@@ -467,6 +475,8 @@ func (t *TSMReader) Delete(keys [][]byte) error {
 		return err
 	}
 
+	// delete the offsets of the keys so the keys is muted
+	// index.delete and tombstoner.add has the same design as the combination of memtable and wal in lsm
 	t.index.Delete(keys)
 	return nil
 }
@@ -957,6 +967,8 @@ func (d *indirectIndex) KeyCount() int {
 }
 
 // Delete removes the given keys from the index.
+// what: delete item from offset array
+// why: mute deleted item in the indirectIndex, the actual deletion take place during the tombstone compaction
 func (d *indirectIndex) Delete(keys [][]byte) {
 	if len(keys) == 0 {
 		return
@@ -1171,6 +1183,7 @@ func (d *indirectIndex) Type(key []byte) (byte, error) {
 }
 
 // OverlapsTimeRange returns true if the time range of the file intersect min and max.
+// why: for fast filte, the same as OverlapsKeyRange, ContainsKey...
 func (d *indirectIndex) OverlapsTimeRange(min, max int64) bool {
 	return d.minTime <= max && d.maxTime >= min
 }
@@ -1200,6 +1213,11 @@ func (d *indirectIndex) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary populates an index from an encoded byte slice
 // representation of an index.
+// read|parse tsm index into memory
+// when: before serving
+// who: all tsm file
+// what: index for series' offset and time range
+// why: decrease the data scanned
 func (d *indirectIndex) UnmarshalBinary(b []byte) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -1222,6 +1240,7 @@ func (d *indirectIndex) UnmarshalBinary(b []byte) error {
 	var offsets []int32
 	iMax := int32(len(b))
 	for i < iMax {
+		// each offset mean one index entry, using for binary search, refer to line 709 to see more details
 		offsets = append(offsets, i)
 
 		// Skip to the start of the values
@@ -1302,6 +1321,7 @@ func (d *indirectIndex) Close() error {
 
 // mmapAccess is mmap based block accessor.  It access blocks through an
 // MMAP file interface.
+// for reading tsm data
 type mmapAccessor struct {
 	accessCount uint64 // Counter incremented everytime the mmapAccessor is accessed
 	freeCount   uint64 // Counter to determine whether the accessor can free its resources
