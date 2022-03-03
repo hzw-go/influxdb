@@ -118,6 +118,7 @@ var (
 )
 
 // TSMWriter writes TSM formatted key and values.
+// to build a new tsm file for compaction
 type TSMWriter interface {
 	// Write writes a new block for key containing and values.  Writes append
 	// blocks in the order that the Write function is called.  The caller is
