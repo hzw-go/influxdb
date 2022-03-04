@@ -521,11 +521,16 @@ func (p *Partition) MeasurementIterator() (tsdb.MeasurementIterator, error) {
 
 // MeasurementExists returns true if a measurement exists.
 func (p *Partition) MeasurementExists(name []byte) (bool, error) {
+	// increase fileset's reference
 	fs, err := p.RetainFileSet()
 	if err != nil {
 		return false, err
 	}
+	// decrease fileset's reference
 	defer fs.Release()
+	// measurement is store in file(log file or index file)
+	// todo when to use log file and when to use index file?
+	// I think log file presents the memory and index file presents disk file
 	m := fs.Measurement(name)
 	return m != nil && !m.Deleted(), nil
 }
@@ -562,6 +567,9 @@ func (p *Partition) MeasurementSeriesIDIterator(name []byte) (tsdb.SeriesIDItera
 
 // DropMeasurement deletes a measurement from the index. DropMeasurement does
 // not remove any series from the index directly.
+// how: marked measurement, tag key, tag value, seriesId deleted, append to wal
+// why: only take place in memory and wal, let compaction do the actual deletion
+// todo why dont need to add tombstone to tsi file just like tsm file?
 func (p *Partition) DropMeasurement(name []byte) error {
 	fs, err := p.RetainFileSet()
 	if err != nil {
@@ -576,6 +584,7 @@ func (p *Partition) DropMeasurement(name []byte) error {
 			if !k.Deleted() {
 				if err := func() error {
 					p.mu.RLock()
+					// todo why using anonymous function, just for defer? Is the defer necessary?
 					defer p.mu.RUnlock()
 					return p.activeLogFile.DeleteTagKey(name, k.Key())
 				}(); err != nil {
@@ -638,6 +647,7 @@ func (p *Partition) DropMeasurement(name []byte) error {
 
 // createSeriesListIfNotExists creates a list of series if they doesn't exist in
 // bulk.
+// add new series
 func (p *Partition) createSeriesListIfNotExists(names [][]byte, tagsSlice []models.Tags) ([]uint64, error) {
 	// Is there anything to do? The partition may have been sent an empty batch.
 	if len(names) == 0 {
@@ -1051,6 +1061,7 @@ func (p *Partition) CheckLogFile() error {
 	return p.checkLogFile()
 }
 
+// rotate the log file and trigger compaction
 func (p *Partition) checkLogFile() error {
 	if p.activeLogFile.Size() < p.MaxLogFileSize {
 		return nil

@@ -9,6 +9,8 @@ import (
 )
 
 // SeriesIDSet represents a lockable bitmap of series ids.
+// what: bitmap of many series id
+// why: check exist, remove duplicate, find difference, merge
 type SeriesIDSet struct {
 	sync.RWMutex
 	bitmap *roaring.Bitmap

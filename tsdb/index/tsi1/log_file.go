@@ -51,6 +51,7 @@ type LogFile struct {
 	wg         sync.WaitGroup // ref count
 	id         int            // file sequence identifier
 	data       []byte         // mmap
+	// wal file
 	file       *os.File       // writer
 	w          *bufio.Writer  // buffered writer
 	bufferSize int            // The size of the buffer used by the buffered writer
@@ -65,6 +66,7 @@ type LogFile struct {
 	// In-memory series existence/tombstone sets.
 	seriesIDSet, tombstoneSeriesIDSet *tsdb.SeriesIDSet
 
+	// memory
 	// In-memory index.
 	mms logMeasurements
 
@@ -261,6 +263,7 @@ func (f *LogFile) Size() int64 {
 }
 
 // Measurement returns a measurement element.
+// find measurement in memory map
 func (f *LogFile) Measurement(name []byte) MeasurementElem {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -511,7 +514,9 @@ func (f *LogFile) DeleteTagValue(name, key, value []byte) error {
 }
 
 // AddSeriesList adds a list of series to the log file in bulk.
+// add new series
 func (f *LogFile) AddSeriesList(seriesSet *tsdb.SeriesIDSet, names [][]byte, tagsSlice []models.Tags) ([]uint64, error) {
+	// get series id by seriesKey, create one if not exists
 	seriesIDs, err := f.sfile.CreateSeriesListIfNotExists(names, tagsSlice)
 	if err != nil {
 		return nil, err
@@ -526,6 +531,7 @@ func (f *LogFile) AddSeriesList(seriesSet *tsdb.SeriesIDSet, names [][]byte, tag
 			seriesIDs[i] = 0
 			continue
 		}
+		// has new series and need to write to wal and memory
 		writeRequired = true
 		entries = append(entries, LogEntry{SeriesID: seriesIDs[i], name: names[i], tags: tagsSlice[i], cached: true, batchidx: i})
 	}
@@ -549,9 +555,11 @@ func (f *LogFile) AddSeriesList(seriesSet *tsdb.SeriesIDSet, names [][]byte, tag
 			seriesIDs[entry.batchidx] = 0
 			continue
 		}
+		// write new series to wal
 		if err := f.appendEntry(entry); err != nil {
 			return nil, err
 		}
+		// write new series to memory
 		f.execEntry(entry)
 		seriesSet.AddNoLock(entry.SeriesID)
 	}
@@ -620,6 +628,7 @@ func (f *LogFile) appendEntry(e *LogEntry) error {
 
 // execEntry executes a log entry against the in-memory index.
 // This is done after appending and on replay of the log.
+// update the memory after appended to wal
 func (f *LogFile) execEntry(e *LogEntry) {
 	switch e.Flag {
 	case LogEntryMeasurementTombstoneFlag:

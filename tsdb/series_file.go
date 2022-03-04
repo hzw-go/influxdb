@@ -31,8 +31,10 @@ const (
 )
 
 // SeriesFile represents the section of the index that holds series data.
+// represent all series data
 type SeriesFile struct {
 	path       string
+	// use multiple partitions to reduce the lock span
 	partitions []*SeriesPartition
 
 	refs sync.RWMutex // RWMutex to track references to the SeriesFile that are in use.

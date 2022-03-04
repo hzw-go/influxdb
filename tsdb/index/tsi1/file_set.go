@@ -446,6 +446,9 @@ type File interface {
 	ID() int
 	Level() int
 
+	// there are two types of files implement this behavior
+	// log file: find measurement in memory map
+	// index file: find measurement in disk file
 	Measurement(name []byte) MeasurementElem
 	MeasurementIterator() MeasurementIterator
 	MeasurementHasSeries(ss *tsdb.SeriesIDSet, name []byte) bool

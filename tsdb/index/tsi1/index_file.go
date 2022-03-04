@@ -117,6 +117,7 @@ func (f *IndexFile) Open() error {
 	// Extract identifier from path name.
 	f.id, f.level = ParseFilename(f.Path())
 
+	// todo why mmap? is mmap dont consume memory?
 	data, err := mmap.Map(f.Path(), 0)
 	if err != nil {
 		return err
@@ -236,6 +237,7 @@ func (f *IndexFile) TombstoneSeriesIDSet() (*tsdb.SeriesIDSet, error) {
 }
 
 // Measurement returns a measurement element.
+// find measurements in disk file
 func (f *IndexFile) Measurement(name []byte) MeasurementElem {
 	e, ok := f.mblk.Elem(name)
 	if !ok {

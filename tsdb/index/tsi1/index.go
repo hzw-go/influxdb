@@ -455,6 +455,7 @@ func (i *Index) ForEachMeasurementName(fn func(name []byte) error) error {
 }
 
 // MeasurementExists returns true if a measurement exists.
+// entry to see if a measurement exists
 func (i *Index) MeasurementExists(name []byte) (bool, error) {
 	n := i.availableThreads()
 
@@ -478,7 +479,7 @@ func (i *Index) MeasurementExists(name []byte) (bool, error) {
 					errC <- nil
 					continue
 				}
-
+				// iterate partitions before found
 				b, err := i.partitions[idx].MeasurementExists(name)
 				if b {
 					atomic.StoreUint32(&found, 1)
@@ -664,6 +665,7 @@ func (i *Index) CreateSeriesListIfNotExists(keys [][]byte, names [][]byte, tagsS
 					return // No more work.
 				}
 
+				// add new series
 				ids, err := i.partitions[idx].createSeriesListIfNotExists(pNames[idx], pTags[idx])
 
 				var updateCache bool
@@ -994,6 +996,9 @@ func (i *Index) TagKeySeriesIDIterator(name, key []byte) (tsdb.SeriesIDIterator,
 func (i *Index) TagValueSeriesIDIterator(name, key, value []byte) (tsdb.SeriesIDIterator, error) {
 	// Check series ID set cache...
 	if i.tagValueCacheSize > 0 {
+		// query cache first
+		// since the seriesID is a pointer, will the cache see the update for seriesID?
+		// the answer is no, i just debugged. todo but why?
 		if ss := i.tagValueCache.Get(name, key, value); ss != nil {
 			// Return a clone because the set is mutable.
 			return tsdb.NewSeriesIDSetIterator(ss.Clone()), nil
@@ -1002,6 +1007,7 @@ func (i *Index) TagValueSeriesIDIterator(name, key, value []byte) (tsdb.SeriesID
 
 	a := make([]tsdb.SeriesIDIterator, 0, len(i.partitions))
 	for _, p := range i.partitions {
+		// if cache missed, go to the tsi file
 		itr, err := p.TagValueSeriesIDIterator(name, key, value)
 		if err != nil {
 			return nil, err
