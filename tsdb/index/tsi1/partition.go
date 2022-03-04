@@ -685,6 +685,7 @@ func (p *Partition) DropSeries(seriesID uint64) error {
 		return err
 	}
 
+	// todo why only remove bitmap
 	p.seriesIDSet.Remove(seriesID)
 
 	// Swap log file, if necessary.

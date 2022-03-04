@@ -145,3 +145,25 @@ Index
         FileSet
             IndexFile | LogFile
 ```
+
+
+
+
+At the end, i have to figure out what will happen during following scenarios
+- [ ] insert point with new series
+- [ ] insert point
+- [ ] update point
+- [ ] delete one point
+- [ ] delete range 
+- [ ] drop one series
+- [ ] drop by tag
+- [ ] drop by measurement
+- [ ] drop shard
+- [ ] show tag keys
+- [ ] show tag values
+- [ ] show series
+- [ ] show measurements
+```
+[show measurements]
+q: drop measurement only mark memory and append wal, how to mute the measurement in tsi file 
+```
