@@ -167,6 +167,7 @@ var (
 )
 
 // FileStore is an abstraction around multiple TSM files.
+// abstraction around multiple TSM files
 type FileStore struct {
 	mu           sync.RWMutex
 	lastModified time.Time

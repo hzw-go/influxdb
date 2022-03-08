@@ -244,6 +244,7 @@ func (p *partition) write(key []byte, values Values) (bool, error) {
 	p.mu.RUnlock()
 	if e != nil {
 		// Hot path.
+		// if series exists, just add the point
 		return false, e.add(values)
 	}
 

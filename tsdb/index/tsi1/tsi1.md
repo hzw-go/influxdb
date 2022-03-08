@@ -146,12 +146,23 @@ Index
             IndexFile | LogFile
 ```
 
-
+```
+store
+    shard
+        engine
+        index
+```
 
 
 At the end, i have to figure out what will happen during following scenarios
 - [ ] insert point with new series
 - [ ] insert point
+```
+[insert point]
+find the shard for each point, create one if not exists
+create series if not exists
+write cache, write wal
+```
 - [ ] update point
 - [ ] delete one point
 - [ ] delete range 
@@ -163,6 +174,7 @@ At the end, i have to figure out what will happen during following scenarios
 - [ ] show tag values
 - [ ] show series
 - [ ] show measurements
+- [ ] show databases
 ```
 [show measurements]
 q: drop measurement only mark memory and append wal, how to mute the measurement in tsi file 

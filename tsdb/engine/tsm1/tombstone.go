@@ -703,6 +703,7 @@ func (t *Tombstoner) tombstonePath() string {
 	return filepath.Join(filepath.Dir(t.Path), filename+".tombstone")
 }
 
+// write to tmp buffer in case of rollback
 func (t *Tombstoner) writeTombstone(dst io.Writer, ts Tombstone) error {
 	binary.BigEndian.PutUint32(t.tmp[:4], uint32(len(ts.Key)))
 	if _, err := dst.Write(t.tmp[:4]); err != nil {

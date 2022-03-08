@@ -709,6 +709,7 @@ func NewCacheLoader(files []string) *CacheLoader {
 // If, during reading of a segment file, corruption is encountered, that segment
 // file is truncated up to and including the last valid byte, and processing
 // continues with the next segment file.
+// recover cache from wal files
 func (cl *CacheLoader) Load(cache *Cache) error {
 
 	var r *WALSegmentReader

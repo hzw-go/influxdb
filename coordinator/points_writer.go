@@ -187,6 +187,7 @@ func (w *PointsWriter) Statistics(tags map[string]string) []models.Statistic {
 // MapShards maps the points contained in wp to a ShardMapping.  If a point
 // maps to a shard group or shard that does not currently exist, it will be
 // created before returning the mapping.
+// [insert point]
 func (w *PointsWriter) MapShards(wp *WritePointsRequest) (*ShardMapping, error) {
 	rp, err := w.MetaClient.RetentionPolicy(wp.Database, wp.RetentionPolicy)
 	if err != nil {
@@ -224,6 +225,7 @@ func (w *PointsWriter) MapShards(wp *WritePointsRequest) (*ShardMapping, error) 
 
 	mapping := NewShardMapping(len(wp.Points))
 	for _, p := range wp.Points {
+		// find the shard group by the point time(partitioned shards)
 		sg := list.ShardGroupAt(p.Time())
 		if sg == nil {
 			// We didn't create a shard group because the point was outside the
@@ -233,6 +235,7 @@ func (w *PointsWriter) MapShards(wp *WritePointsRequest) (*ShardMapping, error) 
 			continue
 		}
 
+		// find the shard by shard group and point hashcode
 		sh := sg.ShardFor(p.HashID())
 		mapping.MapPoint(&sh, p)
 	}

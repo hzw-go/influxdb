@@ -1416,9 +1416,12 @@ func (s *Store) WriteToShard(shardID uint64, points []models.Point) error {
 // [show measurements]: step 1
 func (s *Store) MeasurementNames(auth query.Authorizer, database string, cond influxql.Expr) ([][]byte, error) {
 	s.mu.RLock()
+	// because show measurements dont support time in where clause, we need to find all shards in a database, store -> database -> shard
+	// todo is select also filter shards by database?
 	shards := s.filterShards(byDatabase(database))
 	s.mu.RUnlock()
 
+	// one database has one series file
 	sfile := s.seriesFile(database)
 	if sfile == nil {
 		return nil, nil

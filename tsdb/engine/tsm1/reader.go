@@ -262,6 +262,7 @@ func (t *TSMReader) WithObserver(obs tsdb.FileStoreObserver) {
 	t.tombstoner.WithObserver(obs)
 }
 
+// apply tombstones only delete some item from tsm index
 func (t *TSMReader) applyTombstones() error {
 	var cur, prev Tombstone
 	batch := make([][]byte, 0, 4096)
@@ -600,6 +601,7 @@ type batchDelete struct {
 	r *TSMReader
 }
 
+// add tombstone to tmp file
 func (b *batchDelete) DeleteRange(keys [][]byte, minTime, maxTime int64) error {
 	if len(keys) == 0 {
 		return nil
@@ -623,6 +625,7 @@ func (b *batchDelete) DeleteRange(keys [][]byte, minTime, maxTime int64) error {
 	return nil
 }
 
+// rename tmp file and apply
 func (b *batchDelete) Commit() error {
 	defer b.r.deleteMu.Unlock()
 	if err := b.r.tombstoner.Flush(); err != nil {
@@ -1000,6 +1003,9 @@ func (d *indirectIndex) Delete(keys [][]byte) {
 }
 
 // DeleteRange removes the given keys with data between minTime and maxTime from the index.
+// what will happen if only a part of series is deleted, which result in gaps?
+// the offset of series will be kept when partially delete, a tombstone will be added instead
+// todo so the tombstone will be used while processing query?
 func (d *indirectIndex) DeleteRange(keys [][]byte, minTime, maxTime int64) {
 	// No keys, nothing to do
 	if len(keys) == 0 {

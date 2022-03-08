@@ -506,6 +506,7 @@ func (s *Shard) WritePoints(points []models.Point) error {
 	var writeError error
 	atomic.AddInt64(&s.stats.WriteReq, 1)
 
+	// create series if not exists
 	points, fieldsToCreate, err := s.validateSeriesAndFields(points)
 	if err != nil {
 		if _, ok := err.(PartialWriteError); !ok {

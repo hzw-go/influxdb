@@ -369,6 +369,7 @@ type filterUndeletedSeriesIDIterator struct {
 }
 
 // FilterUndeletedSeriesIDIterator returns an iterator which filters all deleted series.
+// so SeriesFile is due to filter the deleted series
 func FilterUndeletedSeriesIDIterator(sfile *SeriesFile, itr SeriesIDIterator) SeriesIDIterator {
 	if itr == nil {
 		return nil
@@ -1271,6 +1272,7 @@ func (is IndexSet) HasField(measurement []byte, field string) bool {
 
 // DedupeInmemIndexes returns an index set which removes duplicate indexes.
 // Useful because inmem indexes are shared by shards per database.
+// remove duplicate indexes for IndexSet
 func (is IndexSet) DedupeInmemIndexes() IndexSet {
 	other := IndexSet{
 		Indexes:    make([]Index, 0, len(is.Indexes)),
@@ -1341,6 +1343,7 @@ func (is IndexSet) measurementNamesByExpr(auth query.Authorizer, expr influxql.E
 	switch e := expr.(type) {
 	case *influxql.BinaryExpr:
 		switch e.Op {
+		// only one condition which we can process
 		case influxql.EQ, influxql.NEQ, influxql.EQREGEX, influxql.NEQREGEX:
 			tag, ok := e.LHS.(*influxql.VarRef)
 			if !ok {
@@ -1371,7 +1374,7 @@ func (is IndexSet) measurementNamesByExpr(auth query.Authorizer, expr influxql.E
 				return nil, nil
 			}
 			return is.measurementNamesByTagFilter(auth, e.Op, tag.Val, value, regex)
-
+		// there are many conditions, search measurements recursively
 		case influxql.OR, influxql.AND:
 			lhs, err := is.measurementNamesByExpr(auth, e.LHS)
 			if err != nil {

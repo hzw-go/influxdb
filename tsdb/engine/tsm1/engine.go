@@ -1917,7 +1917,7 @@ func (e *Engine) writeSnapshotAndCommit(log *zap.Logger, closedFiles []string, s
 }
 
 // compactCache continually checks if the WAL cache should be written to disk.
-// compact WAL
+// compact immutable memory
 func (e *Engine) compactCache() {
 	t := time.NewTicker(time.Second)
 	defer t.Stop()
@@ -1932,6 +1932,7 @@ func (e *Engine) compactCache() {
 
 		case <-t.C:
 			e.Cache.UpdateAge()
+			// whether age or size exceed
 			if e.ShouldCompactCache(time.Now()) {
 				start := time.Now()
 				e.traceLogger.Info("Compacting cache", zap.String("path", e.path))
@@ -2310,6 +2311,7 @@ func (e *Engine) KeyCursor(ctx context.Context, key []byte, t int64, ascending b
 }
 
 // CreateIterator returns an iterator for the measurement based on opt.
+// entry of query
 func (e *Engine) CreateIterator(ctx context.Context, measurement string, opt query.IteratorOptions) (query.Iterator, error) {
 	if span := tracing.SpanFromContext(ctx); span != nil {
 		labels := []string{"shard_id", strconv.Itoa(int(e.id)), "measurement", measurement}

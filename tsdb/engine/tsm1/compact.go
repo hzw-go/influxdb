@@ -12,6 +12,10 @@ package tsm1
 // iterators.  The resulting stream is written sorted and chunked to allow for
 // one-pass writing of a new TSM file.
 
+// there are sereval types of compactions
+// 1, wal to tsm
+// 2, clean up the tombstone, overwritten entries
+// 3, merge small tsm files
 import (
 	"bytes"
 	"fmt"
@@ -805,6 +809,8 @@ func (c *Compactor) EnableCompactions() {
 }
 
 // WriteSnapshot writes a Cache snapshot to one or more new TSM files.
+// immutable memory to tsm file
+// todo wal is not for snapshot but only for rebuild memory, it's immutable memory used for snapshot, right?
 func (c *Compactor) WriteSnapshot(cache *Cache) ([]string, error) {
 	c.mu.RLock()
 	enabled := c.snapshotsEnabled
