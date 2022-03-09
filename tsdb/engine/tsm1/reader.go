@@ -625,7 +625,7 @@ func (b *batchDelete) DeleteRange(keys [][]byte, minTime, maxTime int64) error {
 	return nil
 }
 
-// rename tmp file and apply
+// rename tmp file and apply the tombstone to index(in memory)
 func (b *batchDelete) Commit() error {
 	defer b.r.deleteMu.Unlock()
 	if err := b.r.tombstoner.Flush(); err != nil {

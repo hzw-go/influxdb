@@ -1497,6 +1497,7 @@ func (s *Store) TagKeys(auth query.Authorizer, shardIDs []uint64, cond influxql.
 	// Get all the shards we're interested in.
 	is := IndexSet{Indexes: make([]Index, 0, len(shardIDs))}
 	s.mu.RLock()
+	// get all series file and index to build an IndexSet, all operate is performed by IndexSet
 	for _, sid := range shardIDs {
 		shard, ok := s.shards[sid]
 		if !ok {

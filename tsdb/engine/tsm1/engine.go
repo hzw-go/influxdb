@@ -1501,6 +1501,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 	}
 
 	// Run the delete on each TSM file in parallel
+	// delete from tombstone
 	if err := e.FileStore.Apply(func(r TSMFile) error {
 		// See if this TSM file contains the keys and time range
 		minKey, maxKey := seriesKeys[0], seriesKeys[len(seriesKeys)-1]
@@ -1562,6 +1563,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 	// Sort the series keys because ApplyEntryFn iterates over the keys randomly.
 	bytesutil.Sort(deleteKeys)
 
+	// delete from cache
 	// how to apply the delete to immutable memory?
 	// dont have to, wal can present the immutable memory, the immutable memory is just for query
 	// but what if delete the range of immutable? it only take effect after compacting the wal?

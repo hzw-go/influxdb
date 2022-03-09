@@ -926,6 +926,7 @@ func (e *StatementExecutor) executeShowSubscriptionsStatement(stmt *influxql.Sho
 	return rows, nil
 }
 
+// entry of [show tag keys]
 func (e *StatementExecutor) executeShowTagKeys(q *influxql.ShowTagKeysStatement, ctx *query.ExecutionContext) error {
 	if q.Database == "" {
 		return ErrDatabaseNameRequired
@@ -947,6 +948,7 @@ func (e *StatementExecutor) executeShowTagKeys(q *influxql.ShowTagKeysStatement,
 	}
 
 	// Get all shards for all retention policies.
+	// get all shards by time range
 	var allGroups []meta.ShardGroupInfo
 	for _, rpi := range di.RetentionPolicies {
 		sgis, err := e.MetaClient.ShardGroupsByTimeRange(q.Database, rpi.Name, timeRange.MinTime(), timeRange.MaxTime())

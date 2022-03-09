@@ -140,10 +140,11 @@ f.measurement(tsi1/index_file.go:IndexFile{} or tsi1/log_file.go:LogFile{})
 
 As we can see, there is a relation between some structs above
 ```
-Index
-    Partition
-        FileSet
-            IndexFile | LogFile
+IndexSet
+    Index
+        Partition
+            FileSet
+                IndexFile | LogFile
 ```
 
 ```
@@ -166,11 +167,22 @@ write cache, write wal
 - [ ] update point
 - [ ] delete one point
 - [ ] delete range 
+    - add tombstone to cache
+    - remove point in cache
+    - add tombstone to wal
+    - add tombstone to tsm file
+    - add tombstone to tsm index
 - [ ] drop one series
 - [ ] drop by tag
 - [ ] drop by measurement
 - [ ] drop shard
 - [ ] show tag keys
+```
+[show tag keys]
+statement_executor.go find shards
+store.go execute by shard
+IndexSet -> Index -> Partition -> FileSet -> LogFile & IndexFile
+```
 - [ ] show tag values
 - [ ] show series
 - [ ] show measurements
@@ -179,3 +191,17 @@ write cache, write wal
 [show measurements]
 q: drop measurement only mark memory and append wal, how to mute the measurement in tsi file 
 ```
+- [ ] select 
+    - select from cache
+    - select from tsm file
+    - apply tombstone to result from tsm file
+    - merge result from cache and tsm file (cache overwrite value from tsm file)
+
+
+all show ... is executed by index
+
+
+The Engine returns a slice of Values by querying the FileStore and Cache. 
+The Values in the Cache are overlaid on top of the values returned from the FileStore.
+The FileStore reads and decodes blocks of Values according to the index for the file.
+Updates (writing a newer value for a point that already exists) occur as normal writes. Since cached values overwrite existing values, newer writes take precedence.

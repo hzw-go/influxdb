@@ -1335,6 +1335,7 @@ func (is IndexSet) MeasurementNamesByExpr(auth query.Authorizer, expr influxql.E
 	return slices.CopyChunkedByteSlices(names, 1000), nil
 }
 
+// find measurements from LogFiles or IndexFiles, as IndexSet is a wrapper for both of them
 func (is IndexSet) measurementNamesByExpr(auth query.Authorizer, expr influxql.Expr) ([][]byte, error) {
 	if expr == nil {
 		return nil, nil

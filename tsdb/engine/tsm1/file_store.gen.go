@@ -27,6 +27,7 @@ LOOP:
 	values = values.Exclude(first.readMin, first.readMax)
 
 	// Remove any tombstones
+	// that's where tombsone apply to the result
 	tombstones := first.r.TombstoneRange(c.key)
 	values = excludeTombstonesFloatValues(tombstones, values)
 	// If there are no values in this first block (all tombstoned or previously read) and

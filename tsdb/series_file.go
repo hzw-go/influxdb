@@ -32,6 +32,7 @@ const (
 
 // SeriesFile represents the section of the index that holds series data.
 // represent all series data
+// what's SeriesFile https://cloud.tencent.com/developer/article/1397217
 type SeriesFile struct {
 	path       string
 	// use multiple partitions to reduce the lock span
