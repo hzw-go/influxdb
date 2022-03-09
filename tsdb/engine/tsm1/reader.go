@@ -247,7 +247,7 @@ func NewTSMReader(f *os.File, options ...tsmReaderOption) (*TSMReader, error) {
 	}
 
 	t.index = index
-	// if there are tombstones in the file, it means the tombstones hasn't compacted yet and need to rebuild the memory state
+	// if there are tombstones in the file, it means the tombstones hasn't compacted yet and need to rebuild the memory state, in fact, to rebuild tsm index
 	t.tombstoner = NewTombstoner(t.Path(), index.ContainsKey)
 
 	if err := t.applyTombstones(); err != nil {

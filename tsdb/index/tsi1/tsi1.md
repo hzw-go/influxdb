@@ -125,10 +125,13 @@ tag_block
 
 ./tsdb/
 series_file
-series_index
-series_partition
-series_segment
-series_set
+    series_partition-1
+    series_partition-2
+        series_index
+            series_segment-1
+            series_segment-2
+        series_segment-1
+        series_segment-2
 
 ### the function stack be called to check measurement exists
 engine.MeasurementExists(tsdb/engine.go)
@@ -156,13 +159,13 @@ store
 
 
 At the end, i have to figure out what will happen during following scenarios
-- [ ] insert point with new series
 - [ ] insert point
 ```
 [insert point]
 find the shard for each point, create one if not exists
-create series if not exists
-write cache, write wal
+create series if not exists(influxdb want to create series before each point, maybe it's a huge potential improvement to attach series id in point)
+    write series wal, write series cache
+write cache, write wal(dont write tsm file)
 ```
 - [ ] update point
 - [ ] delete one point
@@ -205,3 +208,6 @@ The Engine returns a slice of Values by querying the FileStore and Cache.
 The Values in the Cache are overlaid on top of the values returned from the FileStore.
 The FileStore reads and decodes blocks of Values according to the index for the file.
 Updates (writing a newer value for a point that already exists) occur as normal writes. Since cached values overwrite existing values, newer writes take precedence.
+
+
+actually there are three lsm-databases in influxdb: tsm, tsi, series  

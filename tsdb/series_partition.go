@@ -35,7 +35,9 @@ type SeriesPartition struct {
 	closing chan struct{}
 	once    sync.Once
 
+	// disk
 	segments []*SeriesSegment
+	// memory
 	index    *SeriesIndex
 	seq      uint64 // series id sequence
 
