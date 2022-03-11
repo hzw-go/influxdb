@@ -294,6 +294,7 @@ func ReadSeriesKeyFromSegments(a []*SeriesSegment, offset int64) []byte {
 }
 
 // JoinSeriesOffset returns an offset that combines the 2-byte segmentID and 4-byte pos.
+// offset is combined with two parts: segment id for segment file, pos for file offset
 func JoinSeriesOffset(segmentID uint16, pos uint32) int64 {
 	return (int64(segmentID) << 32) | int64(pos)
 }

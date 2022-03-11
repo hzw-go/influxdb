@@ -67,7 +67,7 @@ type LogFile struct {
 	// todo for what
 	// add series to seriesIDSet, remove series from tombstoneSeriesIDSet
 	// but there is a series file can do this?
-	// yes, series file doing exists(), add() find, but what about merge, diff, that's where the tiny seriesIDSet come to the show
+	// yes, series file doing exists() and add() fine, but not efficiency for merge, diff. that's where the tiny seriesIDSet come to fit
 	seriesIDSet, tombstoneSeriesIDSet *tsdb.SeriesIDSet
 
 	// memory

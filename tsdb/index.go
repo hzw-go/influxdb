@@ -370,6 +370,7 @@ type filterUndeletedSeriesIDIterator struct {
 
 // FilterUndeletedSeriesIDIterator returns an iterator which filters all deleted series.
 // so SeriesFile is due to filter the deleted series
+// that's where the deleted series are filtered
 func FilterUndeletedSeriesIDIterator(sfile *SeriesFile, itr SeriesIDIterator) SeriesIDIterator {
 	if itr == nil {
 		return nil
@@ -1898,7 +1899,6 @@ func (is IndexSet) measurementSeriesByExprIterator(name []byte, expr influxql.Ex
 	if err != nil {
 		return nil, err
 	}
-	// that's where the deleted series are filtered
 	return FilterUndeletedSeriesIDIterator(is.SeriesFile, itr), nil
 }
 

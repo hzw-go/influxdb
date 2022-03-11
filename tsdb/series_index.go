@@ -48,6 +48,7 @@ type SeriesIndex struct {
 	idOffsetData []byte // id/offset mmap data
 
 	// In-memory data since rebuild.
+	// rebuild from series file
 	keyIDMap    *rhh.HashMap
 	idOffsetMap map[uint64]int64
 	tombstones  map[uint64]struct{}
@@ -236,6 +237,7 @@ func (idx *SeriesIndex) FindIDListByNameTags(segments []*SeriesSegment, names []
 	return ids, ok
 }
 
+// todo why not using offset as id
 func (idx *SeriesIndex) FindOffsetByID(id uint64) int64 {
 	if offset := idx.idOffsetMap[id]; offset != 0 {
 		return offset
@@ -243,6 +245,7 @@ func (idx *SeriesIndex) FindOffsetByID(id uint64) int64 {
 		return 0
 	}
 
+	// todo why memory and disk exist at the same time
 	hash := rhh.HashUint64(id)
 	for d, pos := int64(0), hash&idx.mask; ; d, pos = d+1, (pos+1)&idx.mask {
 		elem := idx.idOffsetData[(pos * SeriesIndexElemSize):]

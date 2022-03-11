@@ -247,6 +247,7 @@ func (f *SeriesFile) SeriesIDPartitionID(id uint64) int {
 	return int((id - 1) % SeriesFilePartitionN)
 }
 
+// take the remainder of hash
 func (f *SeriesFile) SeriesIDPartition(id uint64) *SeriesPartition {
 	partitionID := f.SeriesIDPartitionID(id)
 	if partitionID >= len(f.partitions) {
