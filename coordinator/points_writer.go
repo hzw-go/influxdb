@@ -394,6 +394,7 @@ func (w *PointsWriter) writeToShard(shard *meta.ShardInfo, database, retentionPo
 	// If we've written to shard that should exist on the current node, but the store has
 	// not actually created this shard, tell it to create it and retry the write
 	if err == tsdb.ErrShardNotFound {
+		// happens when backfill points
 		err = w.TSDBStore.CreateShard(database, retentionPolicy, shard.ID, true)
 		if err != nil {
 			w.Logger.Info("Write failed", zap.Uint64("shard", shard.ID), zap.Error(err))

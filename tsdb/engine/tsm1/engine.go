@@ -1347,6 +1347,7 @@ func (e *Engine) WritePoints(points []models.Point) error {
 
 	// first try to write to the cache
 	// write to the cache
+	// one shard one cache, there are so risks of memory overflow if you backfill points cross many shards
 	if err := e.Cache.WriteMulti(values); err != nil {
 		return err
 	}
