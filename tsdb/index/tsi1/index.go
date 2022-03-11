@@ -690,6 +690,7 @@ func (i *Index) CreateSeriesListIfNotExists(keys [][]byte, names [][]byte, tagsS
 
 					name := pNames[idx][j]
 					tags := pTags[idx][j]
+					// add reverse index
 					if i.tagValueCache.measurementContainsSets(name) {
 						for _, pair := range tags {
 							// TODO(edd): It's not clear to me yet whether it will be better to take a lock

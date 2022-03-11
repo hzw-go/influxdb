@@ -1482,6 +1482,10 @@ func (e *Engine) DeleteSeriesRangeWithPredicate(itr tsdb.SeriesIterator, predica
 // deleteSeriesRange removes the values between min and max (inclusive) from all series.  This
 // does not update the index or disable compactions.  This should mainly be called by DeleteSeriesRange
 // and not directly.
+// 1. add tsm tombstone to memory and append wal
+// 2. remove from tsm cache(both points and series) and append wal
+// 3. remove id from series file and append wal
+// 4. remove id from tsi index(log file) and append wal(log file)
 func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 	if len(seriesKeys) == 0 {
 		return nil
@@ -1707,6 +1711,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 		var err error
 		ids.ForEach(func(id uint64) {
 			name, tags := e.sfile.Series(id)
+			// delete from series file
 			if err1 := e.sfile.DeleteSeriesID(id); err1 != nil {
 				err = err1
 				return

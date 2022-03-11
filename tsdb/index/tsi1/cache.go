@@ -72,6 +72,7 @@ func (c *TagValueSeriesIDCache) exists(name, key, value []byte) bool {
 //
 // NB this does not count as an access on the set—therefore the set is not promoted
 // within the LRU cache.
+// add to cache because one series has been created
 func (c *TagValueSeriesIDCache) addToSet(name, key, value []byte, x uint64) {
 	if mmap, ok := c.cache[string(name)]; ok {
 		if tkmap, ok := mmap[string(key)]; ok {
@@ -95,6 +96,7 @@ func (c *TagValueSeriesIDCache) measurementContainsSets(name []byte) bool {
 
 // Put adds the SeriesIDSet to the cache under the tuple {name, key, value}. If
 // the cache is at its limit, then the least recently used item is evicted.
+// overwrite all seriesIDSet because someone fetched the latest seriesIDSet
 func (c *TagValueSeriesIDCache) Put(name, key, value []byte, ss *tsdb.SeriesIDSet) {
 	c.Lock()
 	// Check under the write lock if the relevant item is now in the cache.
@@ -145,6 +147,7 @@ EVICT:
 
 // Delete removes x from the tuple {name, key, value} if it exists.
 // This method takes a lock on the underlying SeriesIDSet.
+// expire cache because one series has been deleted
 func (c *TagValueSeriesIDCache) Delete(name, key, value []byte, x uint64) {
 	c.Lock()
 	c.delete(name, key, value, x)

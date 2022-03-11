@@ -1898,6 +1898,7 @@ func (is IndexSet) measurementSeriesByExprIterator(name []byte, expr influxql.Ex
 	if err != nil {
 		return nil, err
 	}
+	// that's where the deleted series are filtered
 	return FilterUndeletedSeriesIDIterator(is.SeriesFile, itr), nil
 }
 

@@ -493,11 +493,12 @@ type FieldCreate struct {
 }
 
 // WritePoints will write the raw data points and any new metadata to the index in the shard.
-// entry of writing operate
+// write to shard
 func (s *Shard) WritePoints(points []models.Point) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	// get the engine from shard
 	engine, err := s.engineNoLock()
 	if err != nil {
 		return err
@@ -591,6 +592,7 @@ func (s *Shard) validateSeriesAndFields(points []models.Point) ([]models.Point, 
 
 	// Add new series. Check for partial writes.
 	var droppedKeys [][]byte
+	// create series if not exists
 	if err := engine.CreateSeriesListIfNotExists(keys, names, tagsSlice); err != nil {
 		switch err := err.(type) {
 		// TODO(jmw): why is this a *PartialWriteError when everything else is not a pointer?
@@ -655,6 +657,8 @@ func (s *Shard) validateSeriesAndFields(points []models.Point) ([]models.Point, 
 		j++
 
 		// Create any fields that are missing.
+		// return the field need to create
+		// todo why need to create field
 		iter.Reset()
 		for iter.Next() {
 			fieldKey := iter.FieldKey()

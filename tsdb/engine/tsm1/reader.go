@@ -1471,11 +1471,13 @@ func (m *mmapAccessor) rename(path string) error {
 }
 
 func (m *mmapAccessor) read(key []byte, timestamp int64) ([]Value, error) {
+	// find entry in index
 	entry := m.index.Entry(key, timestamp)
 	if entry == nil {
 		return nil, nil
 	}
 
+	// find points in tsm file
 	return m.readBlock(entry, nil)
 }
 

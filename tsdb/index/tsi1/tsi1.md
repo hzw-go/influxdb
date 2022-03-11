@@ -210,4 +210,22 @@ The FileStore reads and decodes blocks of Values according to the index for the 
 Updates (writing a newer value for a point that already exists) occur as normal writes. Since cached values overwrite existing values, newer writes take precedence.
 
 
-actually there are three lsm-databases in influxdb: tsm, tsi, series  
+actually there are three lsm-databases in influxdb: tsm, tsi, series
+- tsm
+```
+disk: TSMReader
+wal: WAL for recover cache state, Tombstoner for recover TSMReader.indirectIndex.tombstones
+memory: cache points, cache snapshot, TSMReader.indirectIndex for indexEntry and tombstone
+```  
+- tsi
+```
+disk: IndexFile
+wal: LogFile.file
+memory: LogFile.logMeasurements
+```
+- series
+```
+disk: seriesFile
+wal: seriesFile
+memory: seriesIndex
+```

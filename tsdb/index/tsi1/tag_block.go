@@ -323,6 +323,7 @@ type TagBlockValueElem struct {
 
 	// Roaring bitmap encoded series data.
 	// Mutually exclusive with series.data field.
+	// tsi store data represents seriesIDSet
 	seriesIDSetData []byte
 
 	size int

@@ -529,7 +529,8 @@ func (p *Partition) MeasurementExists(name []byte) (bool, error) {
 	// decrease fileset's reference
 	defer fs.Release()
 	// measurement is store in file(log file or index file)
-	// todo when to use log file and when to use index file?
+	// when to use log file and when to use index file?
+	// so stupid question
 	// I think log file presents the memory and index file presents disk file
 	m := fs.Measurement(name)
 	return m != nil && !m.Deleted(), nil
@@ -584,7 +585,6 @@ func (p *Partition) DropMeasurement(name []byte) error {
 			if !k.Deleted() {
 				if err := func() error {
 					p.mu.RLock()
-					// todo why using anonymous function, just for defer? Is the defer necessary?
 					defer p.mu.RUnlock()
 					return p.activeLogFile.DeleteTagKey(name, k.Key())
 				}(); err != nil {
@@ -666,6 +666,8 @@ func (p *Partition) createSeriesListIfNotExists(names [][]byte, tagsSlice []mode
 	// Ensure fileset cannot change during insert.
 	p.mu.RLock()
 	// Insert series into log file.
+	// only add new series to wal and cache and series
+	// todo why need both cache and series
 	ids, err := p.activeLogFile.AddSeriesList(p.seriesIDSet, names, tagsSlice)
 	if err != nil {
 		p.mu.RUnlock()
@@ -686,6 +688,8 @@ func (p *Partition) DropSeries(seriesID uint64) error {
 	}
 
 	// todo why only remove bitmap
+	// because seriesFile is used for judging series exists
+	// the persistence is done by log file
 	p.seriesIDSet.Remove(seriesID)
 
 	// Swap log file, if necessary.
@@ -1119,6 +1123,7 @@ func (p *Partition) compactLogFile(logFile *LogFile) {
 	defer f.Close()
 
 	// Compact log file to new index file.
+	// index file is from log file
 	lvl := p.levels[1]
 	n, err := logFile.CompactTo(f, lvl.M, lvl.K, interrupt)
 	if err != nil {

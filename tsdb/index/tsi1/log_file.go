@@ -64,6 +64,10 @@ type LogFile struct {
 	modTime time.Time        // tracks last time write occurred
 
 	// In-memory series existence/tombstone sets.
+	// todo for what
+	// add series to seriesIDSet, remove series from tombstoneSeriesIDSet
+	// but there is a series file can do this?
+	// yes, series file doing exists(), add() find, but what about merge, diff, that's where the tiny seriesIDSet come to the show
 	seriesIDSet, tombstoneSeriesIDSet *tsdb.SeriesIDSet
 
 	// memory

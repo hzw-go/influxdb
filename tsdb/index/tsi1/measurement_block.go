@@ -105,6 +105,7 @@ func (blk *MeasurementBlock) Elem(name []byte) (e MeasurementBlockElem, ok bool)
 		}
 
 		// Move position forward.
+		// that's the Robin-Hood-Hashing's lookup strategy: move forward if not match until reach end of hashtable or get null
 		pos = (pos + 1) % n
 		d++
 
@@ -343,6 +344,7 @@ type MeasurementBlockElem struct {
 		size   int64
 	}
 
+	// represent bitmap of all series id for traversed quickly
 	series struct {
 		n    uint64 // series count
 		data []byte // serialized series data
@@ -358,6 +360,7 @@ type MeasurementBlockElem struct {
 func (e *MeasurementBlockElem) Name() []byte { return e.name }
 
 // Deleted returns true if the tombstone flag is set.
+// todo update flag to delete measurements?
 func (e *MeasurementBlockElem) Deleted() bool {
 	return (e.flag & MeasurementTombstoneFlag) != 0
 }
@@ -406,6 +409,7 @@ func (e *MeasurementBlockElem) ForEachSeriesID(fn func(uint64) error) error {
 	}
 
 	// Read from uvarint encoded data, if available.
+	// delta encoded
 	var prev uint64
 	for data := e.series.data; len(data) > 0; {
 		delta, n, err := uvarint(data)
@@ -464,6 +468,7 @@ func (e *MeasurementBlockElem) UnmarshalBinary(data []byte) error {
 	} else {
 		// data = memalign(data)
 		e.seriesIDSet = tsdb.NewSeriesIDSet()
+		// build seriesIDSet
 		if err = e.seriesIDSet.UnmarshalBinaryUnsafe(data[:sz]); err != nil {
 			return err
 		}
@@ -495,6 +500,7 @@ func NewMeasurementBlockWriter() *MeasurementBlockWriter {
 }
 
 // Add adds a measurement with series and tag set offset/size.
+// it has to be happens in memory during compaction, which increase memory usage
 func (mw *MeasurementBlockWriter) Add(name []byte, deleted bool, offset, size int64, seriesIDs []uint64) {
 	mm := mw.mms[string(name)]
 	mm.deleted = deleted

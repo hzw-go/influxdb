@@ -53,6 +53,7 @@ type IndexFile struct {
 	tblks map[string]*TagBlock // tag blocks by measurement name
 	mblk  MeasurementBlock
 
+	// why need this since there is a series file
 	// Raw series set data.
 	seriesIDSetData          []byte
 	tombstoneSeriesIDSetData []byte
@@ -117,12 +118,13 @@ func (f *IndexFile) Open() error {
 	// Extract identifier from path name.
 	f.id, f.level = ParseFilename(f.Path())
 
-	// todo why mmap? is mmap dont consume memory?
 	data, err := mmap.Map(f.Path(), 0)
 	if err != nil {
 		return err
 	}
 
+	// index file is loaded by mmap
+	// so all the struct in index file is continuous because it's a file actually
 	return f.UnmarshalBinary(data)
 }
 

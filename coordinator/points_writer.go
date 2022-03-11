@@ -188,6 +188,11 @@ func (w *PointsWriter) Statistics(tags map[string]string) []models.Statistic {
 // maps to a shard group or shard that does not currently exist, it will be
 // created before returning the mapping.
 // [insert point]
+/*
+find shard to write for each point
+a shard presents all series+samples in one time range
+a shard group presents all shards in one database in one retention policy
+*/
 func (w *PointsWriter) MapShards(wp *WritePointsRequest) (*ShardMapping, error) {
 	rp, err := w.MetaClient.RetentionPolicy(wp.Database, wp.RetentionPolicy)
 	if err != nil {
@@ -370,6 +375,10 @@ func (w *PointsWriter) WritePointsPrivileged(database, retentionPolicy string, c
 func (w *PointsWriter) writeToShard(shard *meta.ShardInfo, database, retentionPolicy string, points []models.Point) error {
 	atomic.AddInt64(&w.stats.PointWriteReqLocal, int64(len(points)))
 
+	/*
+	write to shard
+	store is the entry of writing
+	*/
 	err := w.TSDBStore.WriteToShard(shard.ID, points)
 	if err == nil {
 		atomic.AddInt64(&w.stats.WriteOK, 1)

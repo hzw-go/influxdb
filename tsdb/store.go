@@ -1293,6 +1293,7 @@ func (s *Store) DeleteSeries(database string, sources []influxql.Source, conditi
 		s.mu.RUnlock()
 		return ErrMultipleIndexTypes
 	}
+	// one series file for one database
 	sfile := s.sfiles[database]
 	if sfile == nil {
 		s.mu.RUnlock()
@@ -1380,6 +1381,9 @@ func (s *Store) WriteToShard(shardID uint64, points []models.Point) error {
 	default:
 	}
 
+	/*
+	get shard from store.shards
+	*/
 	sh := s.shards[shardID]
 	if sh == nil {
 		s.mu.RUnlock()
