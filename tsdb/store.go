@@ -1384,6 +1384,7 @@ func (s *Store) WriteToShard(shardID uint64, points []models.Point) error {
 	/*
 	get shard from store.shards
 	*/
+	// 获取shard
 	sh := s.shards[shardID]
 	if sh == nil {
 		s.mu.RUnlock()
@@ -1411,6 +1412,7 @@ func (s *Store) WriteToShard(shardID uint64, points []models.Point) error {
 		sh.SetCompactionsEnabled(true)
 	}
 
+	// 写入shard
 	return sh.WritePoints(points)
 }
 

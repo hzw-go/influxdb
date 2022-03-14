@@ -308,6 +308,7 @@ func (w *PointsWriter) WritePointsPrivileged(database, retentionPolicy string, c
 		retentionPolicy = db.DefaultRetentionPolicy
 	}
 
+	// 通过database、retention policy、point的时间戳查找shard
 	shardMappings, err := w.MapShards(&WritePointsRequest{Database: database, RetentionPolicy: retentionPolicy, Points: points})
 	if err != nil {
 		return err
@@ -317,6 +318,7 @@ func (w *PointsWriter) WritePointsPrivileged(database, retentionPolicy string, c
 	ch := make(chan error, len(shardMappings.Points))
 	for shardID, points := range shardMappings.Points {
 		go func(shard *meta.ShardInfo, database, retentionPolicy string, points []models.Point) {
+			// 写入shard
 			err := w.writeToShard(shard, database, retentionPolicy, points)
 			if err == tsdb.ErrShardDeletion {
 				err = tsdb.PartialWriteError{Reason: fmt.Sprintf("shard %d is pending deletion", shard.ID), Dropped: len(points)}
@@ -379,6 +381,7 @@ func (w *PointsWriter) writeToShard(shard *meta.ShardInfo, database, retentionPo
 	write to shard
 	store is the entry of writing
 	*/
+	// 写入shard
 	err := w.TSDBStore.WriteToShard(shard.ID, points)
 	if err == nil {
 		atomic.AddInt64(&w.stats.WriteOK, 1)
@@ -395,6 +398,7 @@ func (w *PointsWriter) writeToShard(shard *meta.ShardInfo, database, retentionPo
 	// not actually created this shard, tell it to create it and retry the write
 	if err == tsdb.ErrShardNotFound {
 		// happens when backfill points
+		// 如果shard不存在则创建shard，通常发生在回填数据时
 		err = w.TSDBStore.CreateShard(database, retentionPolicy, shard.ID, true)
 		if err != nil {
 			w.Logger.Info("Write failed", zap.Uint64("shard", shard.ID), zap.Error(err))
@@ -403,6 +407,7 @@ func (w *PointsWriter) writeToShard(shard *meta.ShardInfo, database, retentionPo
 			return err
 		}
 	}
+	// 创建shard后，再次重试
 	err = w.TSDBStore.WriteToShard(shard.ID, points)
 	if err != nil {
 		w.Logger.Info("Write failed", zap.Uint64("shard", shard.ID), zap.Error(err))

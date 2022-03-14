@@ -1348,16 +1348,20 @@ func (e *Engine) WritePoints(points []models.Point) error {
 	// first try to write to the cache
 	// write to the cache
 	// one shard one cache, there are so risks of memory overflow if you backfill points cross many shards
+	// 写入tsm cache中
 	if err := e.Cache.WriteMulti(values); err != nil {
 		return err
 	}
 
 	if e.WALEnabled {
 		// write to the wal
+		// 写入tsm wal中
 		if _, err := e.WAL.WriteMulti(values); err != nil {
 			return err
 		}
 	}
+	// 至此完成了写操作。
+	// 写操作主要有两个步骤：写cache、写wal。前者写内存，后者顺序写磁盘，耗时小。这就是为什么写的速度非常快
 	return seriesErr
 }
 

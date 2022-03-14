@@ -31,6 +31,7 @@ const partitions = 16
 // To determine the partition that a series key should be added to, the series
 // key is hashed and the first 8 bits are used as an index to the ring.
 //
+// tsm cache的存储实现
 type ring struct {
 	// Number of keys within the ring. This is used to provide a hint for
 	// allocating the return values in keys(). It will not be perfectly accurate
@@ -40,6 +41,7 @@ type ring struct {
 
 	// The unique set of partitions in the ring.
 	// len(partitions) <= len(continuum)
+	// 写入需要加锁。通过分区可减小锁的范围
 	partitions []*partition
 }
 
@@ -112,6 +114,7 @@ func (r *ring) add(key []byte, entry *entry) {
 
 // remove deletes the entry for the given key.
 // remove is safe for use by multiple goroutines.
+// 删除数据。执行delete时用到
 func (r *ring) remove(key []byte) {
 	r.getPartition(key).remove(key)
 	if r.keysHint > 0 {
@@ -223,6 +226,7 @@ func (r *ring) split(n int) []storer {
 // partition provides safe access to a map of series keys to entries.
 type partition struct {
 	mu    sync.RWMutex
+	// 实际存储数据的是map，key为series key，value为points
 	store map[string]*entry
 }
 

@@ -508,6 +508,7 @@ func (s *Shard) WritePoints(points []models.Point) error {
 	atomic.AddInt64(&s.stats.WriteReq, 1)
 
 	// create series if not exists
+	// 检查是否需要创建series
 	points, fieldsToCreate, err := s.validateSeriesAndFields(points)
 	if err != nil {
 		if _, ok := err.(PartialWriteError); !ok {
@@ -525,6 +526,7 @@ func (s *Shard) WritePoints(points []models.Point) error {
 	}
 
 	// Write to the engine.
+	// 写入tsm engine
 	if err := engine.WritePoints(points); err != nil {
 		atomic.AddInt64(&s.stats.WritePointsErr, int64(len(points)))
 		atomic.AddInt64(&s.stats.WriteReqErr, 1)

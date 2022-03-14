@@ -69,6 +69,8 @@ func newEntryValues(values []Value) (*entry, error) {
 }
 
 // add adds the given values to the entry.
+// 追加写
+// todo 是否需要保证顺序
 func (e *entry) add(values []Value) error {
 	if len(values) == 0 {
 		return nil // Nothing to do.
@@ -119,6 +121,7 @@ func (e *entry) count() int {
 }
 
 // filter removes all values with timestamps between min and max inclusive.
+// 删除时间戳在[min, max]的points
 func (e *entry) filter(min, max int64) {
 	e.mu.Lock()
 	if len(e.values) > 1 {
@@ -288,6 +291,7 @@ func (c *Cache) Write(key []byte, values []Value) error {
 	addedSize := uint64(Values(values).Size())
 
 	// Enough room in the cache?
+	// 提前判断cache有足够空间
 	limit := c.maxSize
 	n := c.Size() + addedSize
 
@@ -375,6 +379,7 @@ func (c *Cache) WriteMulti(values map[string][]Value) error {
 
 // Snapshot takes a snapshot of the current cache, adds it to the slice of caches that
 // are being flushed, and resets the current cache with new values.
+// cache无可用空间时，执行snapshot
 func (c *Cache) Snapshot() (*Cache, error) {
 	c.init()
 
@@ -410,6 +415,7 @@ func (c *Cache) Snapshot() (*Cache, error) {
 	// how to snapshot the cache?
 	// 1,move the cache.store to snapshot.store
 	// 2,make a new store and set it to cache.store
+	// 重新申请一块内存作为cache，原始的cache作为snapshot（lsm中的immutable memory），等待compaction
 	c.snapshot.store, c.store = c.store, c.snapshot.store
 	snapshotSize := c.Size()
 

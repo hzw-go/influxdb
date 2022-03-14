@@ -35,9 +35,11 @@ const (
 // what's SeriesFile for?
 // 1. filter the deleted series
 // 2. create new series
+// 用于创建series，判断一个database是否存在某个series
 type SeriesFile struct {
 	path       string
 	// use multiple partitions to reduce the lock span
+	// 多个partition，减小锁的范围。
 	partitions []*SeriesPartition
 
 	refs sync.RWMutex // RWMutex to track references to the SeriesFile that are in use.
