@@ -543,6 +543,9 @@ func (c *SeriesPartitionCompactor) Compact(p *SeriesPartition) error {
 	return nil
 }
 
+// compact series segment to series index file
+// todo will the series segment be deleted?
+// i dont think so, it seems the series index file is for quick startup
 func (c *SeriesPartitionCompactor) compactIndexTo(index *SeriesIndex, seriesN uint64, segments []*SeriesSegment, path string) error {
 	hdr := NewSeriesIndexHeader()
 	hdr.Count = seriesN

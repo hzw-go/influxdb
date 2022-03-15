@@ -225,7 +225,7 @@ memory: LogFile.logMeasurements
 ```
 - series
 ```
-disk: seriesFile
+disk: seriesFile, series index file
 wal: seriesFile
 memory: seriesIndex
 ```

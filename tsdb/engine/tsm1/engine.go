@@ -1824,6 +1824,8 @@ func (e *Engine) WriteSnapshot() (err error) {
 	}()
 
 	closedFiles, snapshot, err := func() (segments []string, snapshot *Cache, err error) {
+		// 获取engine锁，创建新的wal文件，创建snapshot，释放engine锁
+		// 在保证snapshot与wal数据一致的同时将锁时间降到最低
 		e.mu.Lock()
 		defer e.mu.Unlock()
 

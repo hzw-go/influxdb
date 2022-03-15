@@ -108,6 +108,9 @@ func (idx *SeriesIndex) Close() (err error) {
 }
 
 // Recover rebuilds the in-memory index for all new entries.
+// rebuild memory from disk
+// wal: series segment
+// memory: series index
 func (idx *SeriesIndex) Recover(segments []*SeriesSegment) error {
 	// Allocate new in-memory maps.
 	idx.keyIDMap = rhh.NewHashMap(rhh.DefaultOptions)
@@ -117,6 +120,7 @@ func (idx *SeriesIndex) Recover(segments []*SeriesSegment) error {
 	// Process all entries since the maximum offset in the on-disk index.
 	minSegmentID, _ := SplitSeriesOffset(idx.maxOffset)
 	for _, segment := range segments {
+		// 跳过，因为已经compact到series index file并在启动时加载到内存了
 		if segment.ID() < minSegmentID {
 			continue
 		}
@@ -143,6 +147,7 @@ func (idx *SeriesIndex) Count() uint64 {
 func (idx *SeriesIndex) OnDiskCount() uint64 { return idx.count }
 
 // InMemCount returns the number of series in the in-memory index.
+// trigger compaction
 func (idx *SeriesIndex) InMemCount() uint64 { return uint64(len(idx.idOffsetMap)) }
 
 func (idx *SeriesIndex) Insert(key []byte, id uint64, offset int64) {
@@ -246,6 +251,7 @@ func (idx *SeriesIndex) FindOffsetByID(id uint64) int64 {
 	}
 
 	// todo why memory and disk exist at the same time
+	// new data in memory and old data in disk
 	hash := rhh.HashUint64(id)
 	for d, pos := int64(0), hash&idx.mask; ; d, pos = d+1, (pos+1)&idx.mask {
 		elem := idx.idOffsetData[(pos * SeriesIndexElemSize):]

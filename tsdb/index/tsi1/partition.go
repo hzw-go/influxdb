@@ -295,6 +295,9 @@ func (p *Partition) deleteNonManifestFiles(m *Manifest) error {
 	return dir.Close()
 }
 
+// this is where the tombstone take affect in tsi
+// 所有的tsi层的操作都在log file的seriesSet、tombstoneSet上进行。最后merge，达到新数据覆盖旧数据的效果
+// index file的seriesSet、tombstoneSet用于build partition的seriesSet
 func (p *Partition) buildSeriesSet() error {
 	fs := p.retainFileSet()
 	defer fs.Release()
@@ -302,6 +305,7 @@ func (p *Partition) buildSeriesSet() error {
 	p.seriesIDSet = tsdb.NewSeriesIDSet()
 
 	// Read series sets from files in reverse.
+	// 越新的数据优先级越高
 	for i := len(fs.files) - 1; i >= 0; i-- {
 		f := fs.files[i]
 
