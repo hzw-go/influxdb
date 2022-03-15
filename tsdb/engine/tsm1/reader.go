@@ -36,16 +36,19 @@ type TSMReader struct {
 	// accessor provides access and decoding of blocks for the reader.
 	// what: mmap file
 	// why: read points
+	// 通过mmap从tsm文件中读取points
 	accessor blockAccessor
 
 	// index is the index of all blocks.
 	// what: in-memory tsm index reading from tsm file
 	// why: indexing, apply the deletion
+	// tsm index：优化accessor读取；存储tsm的tombstone到内存
 	index TSMIndex
 
 	// tombstoner ensures tombstoned keys are not available by the index.
 	// what: marks for deletion
 	// why: persisting the deletion for compaction and rebuild
+	// 持久化删除操作
 	tombstoner *Tombstoner
 
 	// size is the size of the file on disk.
@@ -972,6 +975,7 @@ func (d *indirectIndex) KeyCount() int {
 // Delete removes the given keys from the index.
 // what: delete item from offset array
 // why: mute deleted item in the indirectIndex, the actual deletion take place during the tombstone compaction
+// 移除tsm index的key offset
 func (d *indirectIndex) Delete(keys [][]byte) {
 	if len(keys) == 0 {
 		return
@@ -1006,6 +1010,7 @@ func (d *indirectIndex) Delete(keys [][]byte) {
 // what will happen if only a part of series is deleted, which result in gaps?
 // the offset of series will be kept when partially delete, a tombstone will be added instead
 // todo so the tombstone will be used while processing query?
+// 应用tombstone
 func (d *indirectIndex) DeleteRange(keys [][]byte, minTime, maxTime int64) {
 	// No keys, nothing to do
 	if len(keys) == 0 {

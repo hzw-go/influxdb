@@ -446,6 +446,7 @@ func (c *floatAscendingCursor) nextFloat() (int64, float64) {
 		return tsdb.EOF, 0
 	}
 
+	// cache points覆盖tsm file points：双指针
 	// Both cache and tsm files have the same key, cache takes precedence.
 	if ckey == tkey {
 		c.nextCache()

@@ -32,6 +32,7 @@ LOOP:
 
 	// Remove any tombstones
 	tombstones := first.r.TombstoneRange(c.key)
+	// tsm的tombstone在这里生效
 	excludeTombstonesFloatArray(tombstones, values)
 	// If there are no values in this first block (all tombstoned or previously read) and
 	// we have more potential blocks too search.  Try again.

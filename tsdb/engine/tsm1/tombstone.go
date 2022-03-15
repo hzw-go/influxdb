@@ -28,6 +28,7 @@ const (
 var errIncompatibleVersion = errors.New("incompatible v4 version")
 
 // Tombstoner records tombstones when entries are deleted.
+// 一个tsm文件有对应的Tombstoner文件，启动时会加载到tsm index中，用于返回查询结果时过滤tsm文件中被删除的points
 type Tombstoner struct {
 	mu sync.RWMutex
 
