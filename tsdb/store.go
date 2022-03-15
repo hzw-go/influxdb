@@ -1260,6 +1260,7 @@ func (s *Store) ShardRelativePath(id uint64) (string, error) {
 
 // DeleteSeries loops through the local shards and deletes the series data for
 // the passed in series keys.
+// 删除series
 func (s *Store) DeleteSeries(database string, sources []influxql.Source, condition influxql.Expr) error {
 	// Expand regex expressions in the FROM clause.
 	a, err := s.ExpandSources(sources)

@@ -501,6 +501,9 @@ func (p *Partition) MeasurementHasSeries(name []byte) (bool, error) {
 	defer fs.Release()
 
 	for _, f := range fs.files {
+		// 这里的p.seriesIDSet代表partition下所有的index File和log File的seriesIDSet merge后的结果
+		// 实际上是根据measurement找到series id，再判断series是否已经被删除
+		// 因为seriesFile也可以判断是否已经删除，所以p.seriesIDSet也可以用seriesFile代替
 		if f.MeasurementHasSeries(p.seriesIDSet, name) {
 			return true, nil
 		}

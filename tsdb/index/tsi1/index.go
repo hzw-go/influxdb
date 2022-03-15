@@ -54,6 +54,40 @@ func init() {
 // NOTE: Currently, this must not be change once a database is created. Further,
 // it must also be a power of 2.
 //
+// 意味着每个shard会有8个tsi文件将被创建
+/*
+data
+├── database-ame
+│   ├── rp-name
+│   │   └── 2 (shard id)
+│   │       ├── 000000009-000000002.tsm
+│   │       ├── fields.idx
+│   │       └── index
+│   │           ├── 0
+│   │           │   ├── L0-00000001.tsl
+│   │           │   └── MANIFEST
+│   │           ├── 1
+│   │           │   ├── L0-00000001.tsl
+│   │           │   └── MANIFEST
+│   │           ├── 2
+│   │           │   ├── L0-00000001.tsl
+│   │           │   └── MANIFEST
+│   │           ├── 3
+│   │           │   ├── L0-00000001.tsl
+│   │           │   └── MANIFEST
+│   │           ├── 4
+│   │           │   ├── L0-00000001.tsl
+│   │           │   └── MANIFEST
+│   │           ├── 5
+│   │           │   ├── L0-00000001.tsl
+│   │           │   └── MANIFEST
+│   │           ├── 6
+│   │           │   ├── L0-00000001.tsl
+│   │           │   └── MANIFEST
+│   │           └── 7
+│   │               ├── L0-00000001.tsl
+│   │               └── MANIFEST
+*/
 var DefaultPartitionN uint64 = 8
 
 // An IndexOption is a functional option for changing the configuration of
@@ -124,6 +158,8 @@ var WithSeriesIDCacheSize = func(sz int) IndexOption {
 // Index represents a collection of layered index files and WAL.
 type Index struct {
 	mu         sync.RWMutex
+	// 一个index分为多个partition（并发、减小锁范围）
+	// 一个partition有一个logFile和多个indexFile
 	partitions []*Partition
 	opened     bool
 
@@ -999,7 +1035,6 @@ func (i *Index) TagValueSeriesIDIterator(name, key, value []byte) (tsdb.SeriesID
 	if i.tagValueCacheSize > 0 {
 		// query cache first
 		// since the seriesID is a pointer, will the cache see the update for seriesID?
-		// the answer is no, i just debugged. todo but why?
 		if ss := i.tagValueCache.Get(name, key, value); ss != nil {
 			// Return a clone because the set is mutable.
 			return tsdb.NewSeriesIDSetIterator(ss.Clone()), nil

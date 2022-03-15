@@ -46,12 +46,14 @@ const defaultLogFileBufferSize = 4096
 const indexFileBufferSize = 1 << 17 // 128K
 
 // LogFile represents an on-disk write-ahead log file.
+// 负责tsi内存操作和WAL日志
 type LogFile struct {
 	mu         sync.RWMutex
 	wg         sync.WaitGroup // ref count
 	id         int            // file sequence identifier
 	data       []byte         // mmap
 	// wal file
+	// wal文件
 	file       *os.File       // writer
 	w          *bufio.Writer  // buffered writer
 	bufferSize int            // The size of the buffer used by the buffered writer
@@ -59,6 +61,7 @@ type LogFile struct {
 	buf        []byte         // marshaling buffer
 	keyBuf     []byte
 
+	// 共享全局的seriesFile
 	sfile   *tsdb.SeriesFile // series lookup
 	size    int64            // tracks current file size
 	modTime time.Time        // tracks last time write occurred
@@ -68,10 +71,19 @@ type LogFile struct {
 	// add series to seriesIDSet, remove series from tombstoneSeriesIDSet
 	// but there is a series file can do this?
 	// yes, series file doing exists() and add() fine, but not efficiency for merge, diff. that's where the tiny seriesIDSet come to fit
+	// 内存操作，即记录新增，删除series的记录，用于覆盖indexFile的seriesIDSet、tombstoneSeriesIDSet。详细步骤见partition的buildSeriesSet
+	// 为什么partition维护一份分区seriesIDSet，而seriesFile维护一份全局的seriesIDSet？
+	// 因为partition维护的seriesIDSet是以series key作为检索条件，而所有序列查找的检索条件都是measurement、tag，并不是series key
+	// 所以实际上partition的seriesIDSet并没有太大用途
+	// 至此我们总结以下tsi查找的核心路径：
+	// 1.按照measurement、tag查找得到多个seriesIDSet
+	// 2.取交集或并集
+	// 3.通过seriesFile过滤已删除的series
 	seriesIDSet, tombstoneSeriesIDSet *tsdb.SeriesIDSet
 
 	// memory
 	// In-memory index.
+	// tsi的内存部分，存储索引；类似于tsm的cache存储points
 	mms logMeasurements
 
 	// Filepath to the log file.
@@ -154,6 +166,7 @@ func (f *LogFile) open() error {
 
 	// Read log entries from mmap.
 	var n int64
+	// 解析wal，重建tsi内存的索引
 	for buf := f.data; len(buf) > 0; {
 		// Read next entry. Truncate partial writes.
 		var e LogEntry
@@ -315,6 +328,7 @@ func (f *LogFile) measurementNames() []string {
 }
 
 // DeleteMeasurement adds a tombstone for a measurement to the log file.
+// 删除操作：写wal日至；更新内存
 func (f *LogFile) DeleteMeasurement(name []byte) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -810,6 +824,8 @@ func (f *LogFile) MeasurementSeriesIDIterator(name []byte) tsdb.SeriesIDIterator
 }
 
 // CompactTo compacts the log file and writes it to w.
+// logFile文件大小超过阈值触发compaction
+// 实际上是把内存导出到tsi index文件，相当于snapshot
 func (f *LogFile) CompactTo(w io.Writer, m, k uint64, cancel <-chan struct{}) (n int64, err error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()

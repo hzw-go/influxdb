@@ -1497,6 +1497,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 	}
 
 	// Ensure keys are sorted since lower layers require them to be.
+	// 排序
 	if !bytesutil.IsSorted(seriesKeys) {
 		bytesutil.Sort(seriesKeys)
 	}
@@ -1511,6 +1512,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 
 	// Run the delete on each TSM file in parallel
 	// delete from tombstone
+	// 遍历所有的tsm文件
 	if err := e.FileStore.Apply(func(r TSMFile) error {
 		// See if this TSM file contains the keys and time range
 		minKey, maxKey := seriesKeys[0], seriesKeys[len(seriesKeys)-1]
@@ -1520,18 +1522,22 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 		tsmMax, _ = SeriesAndFieldFromCompositeKey(tsmMax)
 
 		overlaps := bytes.Compare(tsmMin, maxKey) <= 0 && bytes.Compare(tsmMax, minKey) >= 0
+		// 无符合的序列或者可能存在符合的序列但时间范围不符，跳过
 		if !overlaps || !r.OverlapsTimeRange(min, max) {
 			return nil
 		}
 
 		// Delete each key we find in the file.  We seek to the min key and walk from there.
 		batch := r.BatchDelete()
+		// 根据tsm index的offset数换算series key的数量
 		n := r.KeyCount()
 		var j int
+		// 遍历所有的series
 		for i := r.Seek(minKey); i < n; i++ {
 			indexKey, _ := r.KeyAt(i)
 			seriesKey, _ := SeriesAndFieldFromCompositeKey(indexKey)
 
+			// 跳过期望删除但未在tsm index中找到的series
 			for j < len(seriesKeys) && bytes.Compare(seriesKeys[j], seriesKey) < 0 {
 				j++
 			}
@@ -1540,6 +1546,8 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 				break
 			}
 			if bytes.Equal(seriesKeys[j], seriesKey) {
+				// 写内存：写入内存中的tombstones中
+				// 写disk：创建一个临时tombstone文件，将tombstone写入
 				if err := batch.DeleteRange([][]byte{indexKey}, min, max); err != nil {
 					batch.Rollback()
 					return err
@@ -1547,6 +1555,8 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 			}
 		}
 
+		// 将临时tombstone文件移动到合法路经下，用于recover和compaction
+		// 将内存中的tombstones生效到tsm index中，用于过滤从tsm file中读取到的但已删除的point
 		return batch.Commit()
 	}); err != nil {
 		return err
@@ -1578,10 +1588,12 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 	// but what if delete the range of immutable? it only take effect after compacting the wal?
 	// speak of delete, tsm only add some mark to describe the deletion to memory and wal, points will be deleted while compacting
 	// by the way, there is no update in tsm, or lsm, insert to the memory and wal will have the same effect as update
+	// 删除内存里的points（真正删除，而不是加个墓碑）
 	e.Cache.DeleteRange(deleteKeys, min, max)
 
 	// delete from the WAL
 	if e.WALEnabled {
+		// 记录删除操作
 		if _, err := e.WAL.DeleteRange(deleteKeys, min, max); err != nil {
 			return err
 		}
@@ -1653,6 +1665,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 			}
 
 			name, tags := models.ParseKeyBytes(k)
+			// 根据series key获取series id
 			sid := e.sfile.SeriesID(name, tags, buf)
 			if sid == 0 {
 				continue
@@ -1664,6 +1677,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 			var hasCacheValues bool
 			// If there are multiple fields, they will have the same prefix.  If any field
 			// has values, then we can't delete it from the index.
+			// todo
 			for i < len(deleteKeys) && bytes.HasPrefix(deleteKeys[i], k) {
 				if e.Cache.Values(deleteKeys[i]).Len() > 0 {
 					hasCacheValues = true
@@ -1678,6 +1692,9 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 
 			measurements[string(name)] = struct{}{}
 			// Remove the series from the local index.
+			// 从tsi中删除series：
+			// 1.内存：从partition的seriesIDSet中移除
+			// 2.disk：将操作写入Log File中
 			if err := e.index.DropSeries(sid, k, false); err != nil {
 				return err
 			}
@@ -1687,6 +1704,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 		}
 
 		fielsetChanged := false
+		// 移除不存在series的measurement
 		for k := range measurements {
 			if dropped, err := e.index.DropMeasurementIfSeriesNotExist([]byte(k)); err != nil {
 				return err
@@ -1705,6 +1723,9 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 
 		// Remove any series IDs for our set that still exist in other shards.
 		// We cannot remove these from the series file yet.
+		// 从seriesFile中删除series前，需要过滤掉仍存在其他shard的series
+		// 为什么？
+		// 因为seriesFile代表一个database下所有的series集合，而不是一个shard。由于一个shard有一个tsi、tsm，所以可以删除tsm中的point、tsi中的索引（如上文所示）
 		if err := e.seriesIDSets.ForEach(func(s *tsdb.SeriesIDSet) {
 			ids = ids.AndNot(s)
 		}); err != nil {

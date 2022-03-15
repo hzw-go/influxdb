@@ -44,17 +44,23 @@ var (
 )
 
 // IndexFile represents a collection of measurement, tag, and series data.
+// tsi index文件
 type IndexFile struct {
 	wg   sync.WaitGroup // ref count
 	data []byte
 
 	// Components
+	// 共享全局的seriesFile
 	sfile *tsdb.SeriesFile
+	// 通过mmap读取tsi index文件并解析得到的索引
+	// key为measurement，value为指向mmap映射数据的指针，所以不占内存
 	tblks map[string]*TagBlock // tag blocks by measurement name
 	mblk  MeasurementBlock
 
 	// why need this since there is a series file
 	// Raw series set data.
+	// 为什么需要存储tombstone？
+	// 因为logFile中存储了，而logFile文件compact到index file时并不会apply这些tombstone（减小写的放大效应），必须存储tombstone并等待更高级别的compaction
 	seriesIDSetData          []byte
 	tombstoneSeriesIDSetData []byte
 

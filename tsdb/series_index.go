@@ -33,6 +33,8 @@ const (
 var ErrInvalidSeriesIndex = errors.New("invalid series index")
 
 // SeriesIndex represents an index of key-to-id & id-to-offset mappings.
+// 根据key查找id
+// 根据id查找offset
 type SeriesIndex struct {
 	path string
 
@@ -43,6 +45,10 @@ type SeriesIndex struct {
 	maxSeriesID uint64
 	maxOffset   int64
 
+	// keyIDData、idOffsetData是mmap读取的，不占内存
+	// idOffsetMap、tombstones是memory
+	// mutable memory大小超过阈值时触发compaction，生成series index file
+	// compaction之后，通过mmap读取series index file，然后通过读取未compact的wal重建mutable memory
 	data         []byte // mmap data
 	keyIDData    []byte // key/id mmap data
 	idOffsetData []byte // id/offset mmap data
@@ -111,6 +117,7 @@ func (idx *SeriesIndex) Close() (err error) {
 // rebuild memory from disk
 // wal: series segment
 // memory: series index
+// 重建seriesIndex
 func (idx *SeriesIndex) Recover(segments []*SeriesSegment) error {
 	// Allocate new in-memory maps.
 	idx.keyIDMap = rhh.NewHashMap(rhh.DefaultOptions)
@@ -120,7 +127,7 @@ func (idx *SeriesIndex) Recover(segments []*SeriesSegment) error {
 	// Process all entries since the maximum offset in the on-disk index.
 	minSegmentID, _ := SplitSeriesOffset(idx.maxOffset)
 	for _, segment := range segments {
-		// 跳过，因为已经compact到series index file并在启动时加载到内存了
+		// 跳过，因为已经compact到series index file（类似snapshot）并在启动时加载到内存了
 		if segment.ID() < minSegmentID {
 			continue
 		}
@@ -244,14 +251,17 @@ func (idx *SeriesIndex) FindIDListByNameTags(segments []*SeriesSegment, names []
 
 // todo why not using offset as id
 func (idx *SeriesIndex) FindOffsetByID(id uint64) int64 {
+	// 从idOffsetMap中找。如果找不到则从idOffsetData中找（见下文）
+	// 为什么从两个地方找？
+	// SeriesIndex内存大小超过阈值时，触发compaction（SeriesPartitionCompactor），生成series index file
+	// 而在recover时，通过mmap读取series index file得到idOffsetData，读取未compact的wal重建idOffsetMap
+	// 二者同时存在
 	if offset := idx.idOffsetMap[id]; offset != 0 {
 		return offset
 	} else if len(idx.data) == 0 {
 		return 0
 	}
 
-	// todo why memory and disk exist at the same time
-	// new data in memory and old data in disk
 	hash := rhh.HashUint64(id)
 	for d, pos := int64(0), hash&idx.mask; ; d, pos = d+1, (pos+1)&idx.mask {
 		elem := idx.idOffsetData[(pos * SeriesIndexElemSize):]

@@ -37,6 +37,7 @@ var (
 )
 
 // SeriesSegment represents a log of series entries.
+// 实际存储series的文件
 type SeriesSegment struct {
 	id   uint16
 	path string

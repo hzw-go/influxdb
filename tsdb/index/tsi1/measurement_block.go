@@ -335,21 +335,26 @@ func (t *MeasurementBlockTrailer) WriteTo(w io.Writer) (n int64, err error) {
 }
 
 // MeasurementBlockElem represents an internal measurement element.
+// 有关tsi文件结构总结可参考http://hbasefly.com/2018/02/09/timeseries-database-5/
 type MeasurementBlockElem struct {
+	// 标识measurement是否被删除
 	flag byte   // flag
 	name []byte // measurement name
 
+	// tag block的位置
 	tagBlock struct {
 		offset int64
 		size   int64
 	}
 
 	// represent bitmap of all series id for traversed quickly
+	// 存储该measurement下的所有series id
 	series struct {
 		n    uint64 // series count
 		data []byte // serialized series data
 	}
 
+	// 通过series.data转换得来
 	seriesIDSet *tsdb.SeriesIDSet
 
 	// size in bytes, set after unmarshaling.

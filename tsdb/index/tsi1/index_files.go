@@ -13,6 +13,7 @@ import (
 )
 
 // IndexFiles represents a layered set of index files.
+// 包装多个indexFile
 type IndexFiles []*IndexFile
 
 // IDs returns the ids for all index files.

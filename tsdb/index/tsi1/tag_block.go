@@ -162,6 +162,7 @@ func (blk *TagBlock) DecodeTagValueElem(key, value []byte, valueElem *TagBlockVa
 
 	// Track current distance
 	var d int64
+	// 根据robin hood hashing获取tag key
 	for {
 		// Find offset of tag value.
 		offset := binary.BigEndian.Uint64(hashData[TagValueNSize+(pos*TagValueOffsetSize):])
@@ -184,6 +185,7 @@ func (blk *TagBlock) DecodeTagValueElem(key, value []byte, valueElem *TagBlockVa
 		}
 
 		// Move position forward.
+		// hash冲突，则寻找下一个
 		pos = (pos + 1) % valueN
 		d++
 
@@ -246,10 +248,12 @@ func (itr *tagBlockValueIterator) Next() TagValueElem {
 
 // TagBlockKeyElem represents a tag key element in a TagBlock.
 type TagBlockKeyElem struct {
+	// 标识tag key是否被删除
 	flag byte
 	key  []byte
 
 	// Value data
+	// tag value block的位置
 	data struct {
 		offset uint64
 		size   uint64
@@ -257,6 +261,7 @@ type TagBlockKeyElem struct {
 	}
 
 	// Value hash index data
+	// tag value索引的位置
 	hashIndex struct {
 		offset uint64
 		size   uint64
@@ -267,6 +272,7 @@ type TagBlockKeyElem struct {
 }
 
 // Deleted returns true if the key has been tombstoned.
+// 为了快速跳过已删除的tag key。非必要，如果没有这一步，最终该tag key对应的series也会被seriesFile过滤掉
 func (e *TagBlockKeyElem) Deleted() bool { return (e.flag & TagKeyTombstoneFlag) != 0 }
 
 // Key returns the key name of the element.
@@ -311,11 +317,13 @@ func (e *TagBlockKeyElem) unmarshal(buf, data []byte) {
 
 // TagBlockValueElem represents a tag value element.
 type TagBlockValueElem struct {
+	// 标识tag value是否被删除
 	flag  byte
 	value []byte
 
 	// Legacy uvarint-encoded series data.
 	// Mutually exclusive with seriesIDSetData field.
+	// 存储所有满足'measurement,tagKey=tagValue'的series id
 	series struct {
 		n    uint64 // Series count
 		data []byte // Raw series data

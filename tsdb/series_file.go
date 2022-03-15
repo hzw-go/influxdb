@@ -35,7 +35,11 @@ const (
 // what's SeriesFile for?
 // 1. filter the deleted series
 // 2. create new series
-// 用于创建series，判断一个database是否存在某个series
+// seriesFile作用
+// 1.创建series：为series创建唯一id，并追加写入series segment、series index，返回唯一id
+// 2.根据series key获取series id：series index中的keyIDMap
+// 3.判断series是否被删除（使用频繁）：series index中的tombstones
+// 4.删除series：追加写入series segment；更新series index
 type SeriesFile struct {
 	path       string
 	// use multiple partitions to reduce the lock span

@@ -14,6 +14,7 @@ import (
 )
 
 // FileSet represents a collection of files.
+// 一个tsi涉及的所有文件：一个seriesFile、一个logFile、多个indexFile
 type FileSet struct {
 	levels       []CompactionLevel
 	sfile        *tsdb.SeriesFile
@@ -439,6 +440,7 @@ func (fs *FileSet) SeriesSketches() (estimator.Sketch, estimator.Sketch, error) 
 }
 
 // File represents a log or index file.
+// logFile和indexFile都实现了该接口
 type File interface {
 	Close() error
 	Path() string

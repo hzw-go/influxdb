@@ -306,6 +306,7 @@ func (p *SeriesPartition) DeleteSeriesID(id uint64) error {
 	}
 
 	// Write tombstone entry.
+	// 写disk
 	_, err := p.writeLogEntry(AppendSeriesEntry(nil, SeriesEntryTombstoneFlag, id, nil))
 	if err != nil {
 		return err
@@ -319,6 +320,7 @@ func (p *SeriesPartition) DeleteSeriesID(id uint64) error {
 	}
 
 	// Mark tombstone in memory.
+	// 写内存
 	p.index.Delete(id)
 
 	return nil
