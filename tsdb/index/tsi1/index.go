@@ -88,7 +88,7 @@ data
 │   │               ├── L0-00000001.tsl
 │   │               └── MANIFEST
 */
-var DefaultPartitionN uint64 = 8
+var DefaultPartitionN uint64 = 1
 
 // An IndexOption is a functional option for changing the configuration of
 // an Index.
@@ -119,7 +119,7 @@ var WithLogger = func(l zap.Logger) IndexOption {
 // compacted into IndexFiles.
 var WithMaximumLogFileSize = func(size int64) IndexOption {
 	return func(i *Index) {
-		i.maxLogFileSize = size
+		i.maxLogFileSize = 50
 	}
 }
 
@@ -158,7 +158,7 @@ var WithSeriesIDCacheSize = func(sz int) IndexOption {
 // Index represents a collection of layered index files and WAL.
 type Index struct {
 	mu         sync.RWMutex
-	// 一个index分为多个partition（并发、减小锁范围）
+	// 一个index分为多个partition（并发、减小锁范围，优化写性能。读取时需要遍历、merge所有的partition。）
 	// 一个partition有一个logFile和多个indexFile
 	partitions []*Partition
 	opened     bool

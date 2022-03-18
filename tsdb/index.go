@@ -433,6 +433,7 @@ func (itr *seriesIDExprIterator) Next() (SeriesIDElem, error) {
 // MergeSeriesIDIterators returns an iterator that merges a set of iterators.
 // Iterators that are first in the list take precedence and a deletion by those
 // early iterators will invalidate elements by later iterators.
+// 新的iterator中的deletion会生效到旧的iterator
 func MergeSeriesIDIterators(itrs ...SeriesIDIterator) SeriesIDIterator {
 	if n := len(itrs); n == 0 {
 		return nil
@@ -823,6 +824,7 @@ func (itr *seriesPointIterator) Close() (err error) {
 }
 
 // Next emits the next point in the iterator.
+// 获取所有series
 func (itr *seriesPointIterator) Next() (*query.FloatPoint, error) {
 	for {
 		// Read series keys for next measurement if no more keys remaining.

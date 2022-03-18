@@ -229,3 +229,25 @@ disk: seriesFile, series index file
 wal: seriesFile
 memory: seriesIndex
 ```
+
+
+
+
+
+
+
+
+
+debug
+1.set maxLogFileSize = 50
+2.insert 10 points to cause compaction
+insert cpu,a=1,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=2,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=3,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=4,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=5,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=6,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=7,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=8,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=9,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
+insert cpu,a=10,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000

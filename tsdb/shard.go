@@ -1338,6 +1338,7 @@ func (a Shards) CreateIterator(ctx context.Context, measurement *influxql.Measur
 	return query.Iterators(itrs).Merge(opt)
 }
 
+// 获取所有series
 func (a Shards) createSeriesIterator(ctx context.Context, opt query.IteratorOptions) (_ query.Iterator, err error) {
 	var (
 		idxs  = make([]Index, 0, len(a))

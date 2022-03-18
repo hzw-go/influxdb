@@ -385,6 +385,7 @@ func (fs *FileSet) TagValueSeriesIDIterator(name, key, value []byte) (tsdb.Serie
 	ss := tsdb.NewSeriesIDSet()
 
 	var ftss *tsdb.SeriesIDSet
+	// logFile中的tombstone生效到indexFile
 	for i := len(fs.files) - 1; i >= 0; i-- {
 		f := fs.files[i]
 

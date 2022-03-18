@@ -747,6 +747,7 @@ func (f *LogFile) execSeriesEntry(e *LogEntry) {
 	}
 
 	// Add/remove from appropriate series id sets.
+	// 添加、删除series
 	if !deleted {
 		f.seriesIDSet.Add(e.SeriesID)
 		f.tombstoneSeriesIDSet.Remove(e.SeriesID)

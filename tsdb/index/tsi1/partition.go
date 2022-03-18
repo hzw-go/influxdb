@@ -688,15 +688,15 @@ func (p *Partition) createSeriesListIfNotExists(names [][]byte, tagsSlice []mode
 	return ids, nil
 }
 
+// 写wal、更新logFile中的内存数据
+// 更新partition的seriesIDSet
+// todo 如何生效到查询操作？
 func (p *Partition) DropSeries(seriesID uint64) error {
 	// Delete series from index.
 	if err := p.activeLogFile.DeleteSeriesID(seriesID); err != nil {
 		return err
 	}
 
-	// todo why only remove bitmap
-	// because seriesFile is used for judging series exists
-	// the persistence is done by log file
 	p.seriesIDSet.Remove(seriesID)
 
 	// Swap log file, if necessary.

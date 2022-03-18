@@ -1692,6 +1692,7 @@ func (e *Engine) deleteSeriesRange(seriesKeys [][]byte, min, max int64) error {
 
 			measurements[string(name)] = struct{}{}
 			// Remove the series from the local index.
+			// 如果tsm的series完全被删除了，那么tsi也应该删除这个series
 			// 从tsi中删除series：
 			// 1.内存：从partition的seriesIDSet中移除
 			// 2.disk：将操作写入Log File中
@@ -1851,6 +1852,7 @@ func (e *Engine) WriteSnapshot() (err error) {
 		defer e.mu.Unlock()
 
 		if e.WALEnabled {
+			// 截断wal，让wal的数据和snapshot的数据保持一致
 			if err = e.WAL.CloseSegment(); err != nil {
 				return
 			}
@@ -1917,6 +1919,7 @@ func (e *Engine) writeSnapshotAndCommit(log *zap.Logger, closedFiles []string, s
 	}()
 
 	// write the new snapshot files
+	// 将snapshot写入tsm file
 	newFiles, err := e.Compactor.WriteSnapshot(snapshot)
 	if err != nil {
 		log.Info("Error writing snapshot from compactor", zap.Error(err))
@@ -1943,6 +1946,7 @@ func (e *Engine) writeSnapshotAndCommit(log *zap.Logger, closedFiles []string, s
 	e.Cache.ClearSnapshot(true)
 
 	if e.WALEnabled {
+		// 移除snapshot对应的wal
 		if err := e.WAL.Remove(closedFiles); err != nil {
 			log.Info("Error removing closed WAL segments", zap.Error(err))
 		}
@@ -2483,6 +2487,7 @@ func (e *Engine) createCallIterator(ctx context.Context, measurement string, cal
 }
 
 // createVarRefIterator creates an iterator for a variable reference.
+// 查询入口
 func (e *Engine) createVarRefIterator(ctx context.Context, measurement string, opt query.IteratorOptions) ([]query.Iterator, error) {
 	ref, _ := opt.Expr.(*influxql.VarRef)
 
@@ -2501,6 +2506,7 @@ func (e *Engine) createVarRefIterator(ctx context.Context, measurement string, o
 		tagSets, err = ts.TagSets([]byte(measurement), opt)
 	} else {
 		indexSet := tsdb.IndexSet{Indexes: []tsdb.Index{e.index}, SeriesFile: e.sfile}
+		// 根据measurement和where条件获取获取series
 		tagSets, err = indexSet.TagSets(e.sfile, []byte(measurement), opt)
 	}
 
