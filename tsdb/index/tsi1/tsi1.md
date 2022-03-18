@@ -239,7 +239,7 @@ memory: seriesIndex
 
 
 debug
-1.set maxLogFileSize = 50
+1.set maxLogFileSize = 50,DefaultPartitionN=1
 2.insert 10 points to cause compaction
 insert cpu,a=1,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
 insert cpu,a=2,b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb value=2 1647574800000000000
